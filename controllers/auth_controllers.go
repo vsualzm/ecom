@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"ecom/config"
 	"ecom/utils"
+	"fmt"
 	"math/rand"
 	"net/http"
 	"time"
@@ -12,6 +13,7 @@ import (
 )
 
 type RegisterInput struct {
+	Names    string `json:"names"`
 	Username string `json:"username"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -36,8 +38,17 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	query := `INSERT INTO users (username, email, password, role, code_generate) VALUES ($1, $2, $3, $4, $5)`
-	_, err = config.DB.Exec(query, input.Username, input.Email, hashedPassword, input.Role, generateRandomCode())
+	randomCode := generateRandomCode()
+
+	fmt.Println("name:", input.Names)
+	fmt.Println("Random Code:", randomCode)
+	fmt.Println("Hashed Password:", hashedPassword)
+	fmt.Println("Email:", input.Email)
+	fmt.Println("Username:", input.Username)
+	fmt.Println("Role:", input.Role)
+
+	query := `INSERT INTO users (names, username, email, password, role, code_referal) VALUES ($1, $2, $3, $4, $5, $6)`
+	_, err = config.DB.Exec(query, input.Names, input.Username, input.Email, hashedPassword, input.Role, randomCode)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "Gagal mendaftarkan user", "error": err.Error()})
 		return
@@ -53,16 +64,16 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	var userID int
+	var Id int
 	var hashedPassword string
 
-	err := config.DB.QueryRow("SELECT id, password FROM users WHERE email = $1", input.Email).Scan(&userID, &hashedPassword)
+	err := config.DB.QueryRow("SELECT id, password FROM users WHERE email = $1", input.Email).Scan(&Id, &hashedPassword)
 	if err == sql.ErrNoRows || !utils.CheckPasswordHash(input.Password, hashedPassword) {
 		c.JSON(http.StatusUnauthorized, gin.H{"success": false, "message": "Email atau password salah"})
 		return
 	}
 
-	token, err := utils.GenerateJWT(userID)
+	token, err := utils.GenerateJWT(Id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "Gagal membuat token"})
 		return
