@@ -20,6 +20,12 @@ func AuthMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+
+		// untuk menyimpan di contex user_id nya
+		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+			c.Set("user_id", int(claims["user_id"].(float64)))
+		}
+
 		c.Next()
 	}
 }

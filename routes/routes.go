@@ -16,7 +16,11 @@ func SetupRoutes() *gin.Engine {
 	api := r.Group("/api")
 	api.Use(middleware.AuthMiddleware())
 	{
-		// api.GET("/products", controllers.GetProducts)
+		api.POST("/categories", controllers.CreateCategory)
+		api.POST("/products", controllers.CreateProduct)
+		api.GET("/products", controllers.GetProducts)
+		api.PUT("/products/:id", controllers.UpdateProduct)
+		api.DELETE("/products/:id", controllers.DeleteProduct)
 	}
 
 	return r

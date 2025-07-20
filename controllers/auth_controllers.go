@@ -28,13 +28,13 @@ type LoginInput struct {
 func Register(c *gin.Context) {
 	var input RegisterInput
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "Input tidak valid", "error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"success": 400, "message": "Input tidak valid", "error": err.Error()})
 		return
 	}
 
 	hashedPassword, err := utils.HashPassword(input.Password)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "Gagal hash password"})
+		c.JSON(http.StatusInternalServerError, gin.H{"success": 500, "message": "Gagal hash password"})
 		return
 	}
 
@@ -50,17 +50,17 @@ func Register(c *gin.Context) {
 	query := `INSERT INTO users (names, username, email, password, role, code_referal) VALUES ($1, $2, $3, $4, $5, $6)`
 	_, err = config.DB.Exec(query, input.Names, input.Username, input.Email, hashedPassword, input.Role, randomCode)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "Gagal mendaftarkan user", "error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"success": 500, "message": "Gagal mendaftarkan user", "error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"success": true, "message": "Registrasi berhasil"})
+	c.JSON(http.StatusCreated, gin.H{"success": 200, "message": "Registrasi berhasil"})
 }
 
 func Login(c *gin.Context) {
 	var input LoginInput
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "Input tidak valid", "error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"success": 400, "message": "Input tidak valid", "error": err.Error()})
 		return
 	}
 
@@ -69,17 +69,17 @@ func Login(c *gin.Context) {
 
 	err := config.DB.QueryRow("SELECT id, password FROM users WHERE email = $1", input.Email).Scan(&Id, &hashedPassword)
 	if err == sql.ErrNoRows || !utils.CheckPasswordHash(input.Password, hashedPassword) {
-		c.JSON(http.StatusUnauthorized, gin.H{"success": false, "message": "Email atau password salah"})
+		c.JSON(http.StatusUnauthorized, gin.H{"success": 401, "message": "Email atau password salah"})
 		return
 	}
 
 	token, err := utils.GenerateJWT(Id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "Gagal membuat token"})
+		c.JSON(http.StatusInternalServerError, gin.H{"success": 500, "message": "Gagal membuat token"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Login berhasil", "data": gin.H{"token": token}})
+	c.JSON(http.StatusOK, gin.H{"success": 200, "message": "Login berhasil", "data": gin.H{"token": token}})
 }
 
 func generateRandomCode() string {
